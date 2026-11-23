@@ -309,6 +309,14 @@
         const remote = await api(stateUrl);
         if ((await reconcile(remote)) === 'locked') return true;
         try { localStorage.setItem('ftb.tracking', '1'); } catch (e) { /* ignore */ }
+        // a new browser opens the empty first tree: jump to the account's newest tree that has people in it
+        if (FT.auth && treeId === 'main' && FT.isBlankTree() && !sessionStorage.getItem('ftb.manual')) {
+          try {
+            const list = await api('/api/trees');
+            const other = list.filter((t) => t.id !== 'main' && t.people > 1).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))[0];
+            if (other) { localStorage.setItem(FT.activeKey, other.id); location.reload(); return true; }
+          } catch (e) { /* stay on the first tree */ }
+        }
         if (sync.config.realtime) openStream(); else startPolling();
         window.dispatchEvent(new CustomEvent('ft:treelist'));
         return true;

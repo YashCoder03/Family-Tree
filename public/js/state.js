@@ -258,6 +258,14 @@
     if (!(opts && opts.local) && FT.sync) FT.sync.queue();
   };
 
+  // true while this tree is still just the single starting person with nothing filled in
+  FT.isBlankTree = function () {
+    const ids = Object.keys(store.tree.people);
+    if (ids.length !== 1) return false;
+    const p = store.tree.people[ids[0]];
+    return (!p.name || p.name === 'Me') && !p.surnameNow && !p.surnameBirth && !p.dob && !p.dod && !p.city && !p.profession && !p.facts && !p.image && !p.gender;
+  };
+
   FT.snapshot = () => ({ tree: store.tree, settings: store.settings, name: FT.treeName() });
 
   // A guest of a server that already has accounts must not see the family data shipped with the app.
@@ -433,6 +441,7 @@
   // Makes another tree the one this browser shows (reloads the page so everything starts clean).
   FT.switchTo = function (id) {
     try {
+      sessionStorage.setItem('ftb.manual', '1'); // the user chose this tree: do not auto-jump elsewhere
       localStorage.setItem(ACTIVE_KEY, id);
       const v = JSON.parse(localStorage.getItem('ftb.viewstate') || '{}');
       v.center = null;

@@ -1089,22 +1089,26 @@
     const c = src ? FT.subtreeCount(fromPerson) : null;
     const first = src ? (src.name || 'Person').split(' ')[0] : '';
     const heading = imported ? 'Import tree' : src ? 'New tree from ' + esc(FT.fullName(src)) : 'New blank tree';
+    // an empty current tree is simply filled by the import instead of leaving an empty tree behind
+    const reuse = !!imported && FT.isBlankTree();
     const blurb = imported
-      ? `<p class="muted"><strong>${imported.people} ${imported.people === 1 ? 'person' : 'people'}</strong> found in the file. They are added as a <strong>new tree</strong>, so your current trees stay exactly as they are.</p>`
+      ? (reuse
+        ? `<p class="muted"><strong>${imported.people} ${imported.people === 1 ? 'person' : 'people'}</strong> found in the file. Your current tree is still empty, so the imported family fills it.</p>`
+        : `<p class="muted"><strong>${imported.people} ${imported.people === 1 ? 'person' : 'people'}</strong> found in the file. They are added as a <strong>new tree</strong>, so your current trees stay exactly as they are.</p>`)
       : src ? `<p class="muted"><strong>${c.total} ${c.total === 1 ? 'person' : 'people'}</strong> will be copied: ${esc(FT.fullName(src))}${c.partners ? `, partner${c.partners > 1 ? 's' : ''}` : ''}${c.descendants ? ` and ${c.descendants} descendant${c.descendants > 1 ? 's' : ''}` : ''}. Parents, grandparents, siblings and the in-laws' own families are <strong>not</strong> copied. This tree stays exactly as it is.</p>`
         : '<p class="muted">Starts a separate tree with one person. Your other trees stay as they are.</p>';
     const defaultName = imported ? imported.name : src ? first + "'s family" : 'New family tree';
     treeNewForm.innerHTML = `<h2>${heading}</h2>${blurb}
       <label>Tree name<input name="name" required maxlength="80" value="${esc(defaultName)}" autocomplete="off"></label>
       ${src || imported ? '' : '<label>First person\'s name<input name="first" maxlength="80" value="Me" autocomplete="off"></label>'}
-      <label class="chk"><input type="checkbox" name="open" checked> Open the new tree now</label>
+      ${reuse ? '' : '<label class="chk"><input type="checkbox" name="open" checked> Open the new tree now</label>'}
       <div class="dlg-actions"><button type="button" class="btn" id="treeNewCancel">Cancel</button><button class="btn primary" value="create">${imported ? 'Import tree' : 'Create tree'}</button></div>`;
     $('#treeNewCancel').onclick = () => treeNewDlg.close();
     treeNewForm.onsubmit = async (e) => {
       e.preventDefault();
       const d = new FormData(treeNewForm);
       const name = String(d.get('name') || '').trim() || 'New family tree';
-      const id = FT.newTreeId();
+      const id = reuse ? FT.activeId : FT.newTreeId();
       const tree = imported ? imported.tree : src ? FT.buildSubtree(fromPerson) : FT.blankTree(String(d.get('first') || ''));
       let staged;
       try { staged = FT.stageTree(id, name, tree, imported && imported.settings); } catch (err) { alert('Could not save the new tree in this browser (storage is full or the file is not a valid tree).'); return; }
@@ -1115,7 +1119,7 @@
       let uploaded = true;
       try { await FT.sync.createTree(id, staged); } catch (err) {
         if (err.locked || err.status) { // the server answered and said no: do not keep a half-created copy
-          FT.forgetTree(id);
+          if (!reuse) FT.forgetTree(id);
           btn.disabled = false;
           btn.textContent = label;
           alert(err.locked ? 'Sign in first: on this site trees are saved to your account.' : `The server could not save this tree: ${err.message}`);
@@ -1125,7 +1129,7 @@
         try { localStorage.setItem(FT.dirtyKey(id), '1'); } catch (x) { /* ignore */ }
       }
       treeNewDlg.close();
-      if (d.get('open')) return FT.switchTo(id);
+      if (reuse || d.get('open')) return FT.switchTo(id);
       await openTrees();
       treeMsg = `"${name}" was ${imported ? 'imported' : 'created'}${uploaded ? '' : ' in this browser (it will be saved to the server when you open it with the server running)'}.`;
       paintTrees();
