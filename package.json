@@ -1,0 +1,15 @@
+{
+  "name": "family-tree-builder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Family tree builder: runs locally with live sync, or on Vercel with MongoDB",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "mongodb": "^7.9.1"
+  }
+}

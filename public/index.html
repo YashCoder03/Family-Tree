@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f3">
+  <script>
+    // set the theme before first paint (saved choice, else the system setting)
+    (function () {
+      try {
+        var t = localStorage.getItem('ftb.theme');
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#0d1310' : '#f2f5f3');
+      } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+    })();
+  </script>
+  <meta name="description" content="Create an online family tree with relatives, birth details, photos, and life stories. Automatically arranges family connections and lets you export your tree as JPEG, PNG, SVG, or Excel.">
+  <title>Online Family Tree Maker | Family Tree Builder</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/styles.css?v=20261124a">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="Family Tree Builder home">
+      <img src="favicon.svg" alt="" width="36" height="36">
+      <span>Family Tree Builder</span>
+    </a>
+    <div class="search-wrap" id="searchWrap">
+      <svg class="search-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input id="searchInput" type="search" placeholder="Search people, places, relations…" autocomplete="off" spellcheck="false" aria-label="Search the family tree" role="combobox" aria-expanded="false" aria-controls="searchList">
+      <kbd class="search-kbd">Ctrl K</kbd>
+      <ul class="search-list" id="searchList" role="listbox" hidden></ul>
+    </div>
+    <div class="top-actions">
+      <span class="view-badge" id="viewBadge" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 2.7 8.1 1 12.5 2.7 16.9 7 20 12 20s9.3-3.1 11-7.5C21.3 8.1 17 5 12 5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg><span>View only</span><b id="viewBadgeName"></b></span>
+      <button class="account-btn" id="authBtn" title="Sign in or create an account">
+        <span class="avatar" id="authAvatar" aria-hidden="true"></span>
+        <span id="authLabel">Sign in</span>
+      </button>
+      <button class="trees-btn" id="treesBtn" title="My family trees: open, create or save a tree" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z"/></svg>
+        <span id="treesBtnName">My family tree</span>
+      </button>
+      <button class="icon-btn search-toggle" id="searchBtn" aria-label="Search" title="Search (Ctrl+K)">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      </button>
+      <button class="icon-btn" id="themeBtn" aria-label="Switch to dark mode" title="Light / dark mode"></button>
+      <button class="icon-btn" id="menuBtn" aria-label="Open navigation menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+      </button>
+    </div>
+    <nav class="menu" id="menu" hidden aria-label="Main navigation">
+      <a href="#/">Home</a>
+      <a href="#/about">About Us</a>
+      <a href="#/faq">FAQ</a>
+      <a href="#/contact">Contact</a>
+      <hr>
+      <button type="button" id="dirBtn">Name &amp; City list</button>
+      <button type="button" id="saveJson">Save tree to file</button>
+      <button type="button" id="loadJson">Import tree from file</button>
+      <input type="file" id="loadJsonInput" accept="application/json,.json" hidden>
+    </nav>
+  </header>
+
+  <main id="home" class="workspace">
+    <aside class="panel" id="panel" aria-label="Person details"></aside>
+    <section class="stage" aria-label="Family tree">
+      <div class="toolbar" role="toolbar" aria-label="Tree tools">
+        <div class="export-wrap views-wrap">
+          <button data-act="views" class="with-label" title="Choose how to see the family" aria-haspopup="true"></button>
+          <div class="export-menu views-menu" id="viewsMenu" hidden></div>
+        </div>
+        <button class="tree-only" data-act="zoomOut" title="Zoom out" aria-label="Zoom out"></button>
+        <button class="tree-only" data-act="zoomIn" title="Zoom in" aria-label="Zoom in"></button>
+        <div class="export-wrap view-wrap tree-only">
+          <button data-act="center" title="Fit entire tree" aria-label="Center tree"></button>
+          <button data-act="viewMenu" class="caret" title="More auto-adjust options" aria-label="More auto-adjust options" aria-haspopup="true"></button>
+          <div class="export-menu" id="viewMenu" hidden></div>
+        </div>
+        <button data-act="settings" title="Tree settings" aria-label="Tree settings"></button>
+        <button class="tree-only" data-act="manual" title="Manual layout" aria-label="Manual layout" aria-pressed="false"></button>
+        <button data-act="share" class="with-label" title="Share a view-only link to this tree" aria-haspopup="dialog"></button>
+        <div class="export-wrap tree-only">
+          <button data-act="export" class="with-label" title="Export your family tree in your preferred format" aria-haspopup="true"></button>
+          <div class="export-menu" id="exportMenu" hidden>
+            <button data-export="png">PNG image</button>
+            <button data-export="jpeg">JPEG image</button>
+            <button data-export="svg">SVG vector</button>
+            <button data-export="xlsx">Excel spreadsheet</button>
+            <hr>
+            <button data-export="json">Tree file (.json), re-importable</button>
+          </div>
+        </div>
+        <button data-act="undo" title="Undo" aria-label="Undo"></button>
+        <button data-act="redo" title="Redo" aria-label="Redo"></button>
+        <button data-act="reset" title="Reset tree" aria-label="Reset tree"></button>
+      </div>
+      <svg id="canvas" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Family tree diagram">
+        <defs>
+          <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <path d="M24 0H0V24" fill="none" stroke="#dfe7dc" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect id="gridBg" width="100%" height="100%" fill="url(#grid)"/>
+        <g id="viewport"></g>
+      </svg>
+      <button class="hidden-chip" id="hiddenChip" hidden></button>
+      <section class="alt-view" id="altView" aria-label="Family view" hidden></section>
+      <div class="intro" id="intro">
+        <button class="x" id="introClose" aria-label="Dismiss introduction">&times;</button>
+        <h1>Create Your Family Tree Online</h1>
+        <p>Build, organize, and share your family history with an easy online family tree builder. Add relatives, photos, dates, and life stories, then automatically generate a beautiful genealogy tree. Access your tree anywhere and export it to print or share with family.</p>
+      </div>
+    </section>
+  </main>
+
+  <main id="page" class="page" hidden></main>
+
+  <footer class="footer">
+    <nav aria-label="Footer navigation">
+      <a href="#/">Home</a>
+      <a href="#/about">About Us</a>
+      <a href="#/faq">FAQ</a>
+      <a href="#/contact">Contact</a>
+      <a href="#/privacy-policy">Privacy Policy</a>
+      <a href="#/terms-and-conditions">Terms &amp; Conditions</a>
+    </nav>
+    <div id="saveStatus" class="save-status" title="Your tree is saved automatically in this browser's local storage after every change">Autosave is on</div>
+    <div>&copy; <span id="year"></span> Family Tree Builder <small style="opacity:.55">· build 20261124a</small></div>
+  </footer>
+
+  <div class="cookies" id="cookies" role="dialog" aria-label="Cookies settings" hidden>
+    <p>We use local storage to keep your tree on this device. Read more in <a href="#/privacy-policy">Privacy Policy</a>.</p>
+    <button class="btn primary" id="cookieOk">Accept</button>
+  </div>
+
+  <dialog id="editDlg"><form method="dialog" id="editForm"></form></dialog>
+  <dialog id="settingsDlg"><form method="dialog" id="settingsForm"></form></dialog>
+  <dialog id="chooseDlg"><form method="dialog" id="chooseForm"></form></dialog>
+  <dialog id="linkDlg"><form method="dialog" id="linkForm"></form></dialog>
+  <dialog id="dirDlg"><form method="dialog" id="dirForm"></form></dialog>
+  <div class="gone" id="goneBox" hidden role="alert">
+    <div><h2>Link not available</h2><p id="goneMsg"></p><a class="btn primary" href="./">Open Family Tree Builder</a></div>
+  </div>
+  <dialog id="shareDlg"><form method="dialog" id="shareForm"></form></dialog>
+  <dialog id="authDlg"><form method="dialog" id="authForm"></form></dialog>
+  <dialog id="treesDlg"><form method="dialog" id="treesForm"></form></dialog>
+  <dialog id="treeNewDlg"><form method="dialog" id="treeNewForm"></form></dialog>
+
+  <script src="js/family-data.js?v=20261124a"></script>
+  <script src="js/state.js?v=20261124a"></script>
+  <script src="js/layout.js?v=20261124a"></script>
+  <script src="js/kinship.js?v=20261124a"></script>
+  <script src="js/render.js?v=20261124a"></script>
+  <script src="js/export.js?v=20261124a"></script>
+  <script src="js/pages.js?v=20261124a"></script>
+  <script src="js/views.js?v=20261124a"></script>
+  <script src="js/sync.js?v=20261124a"></script>
+  <script src="js/app.js?v=20261124a"></script>
+</body>
+</html>

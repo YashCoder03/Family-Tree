@@ -1,0 +1,8 @@
+# your real family data and accounts never go into git
+data/
+local/
+node_modules/
+.vercel/
+.env*
+*.log
+*.tmp

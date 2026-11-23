@@ -1,0 +1,6 @@
+data/
+local/
+server.js
+start.cmd
+.env*
+*.log
