@@ -1098,7 +1098,9 @@
       : src ? `<p class="muted"><strong>${c.total} ${c.total === 1 ? 'person' : 'people'}</strong> will be copied: ${esc(FT.fullName(src))}${c.partners ? `, partner${c.partners > 1 ? 's' : ''}` : ''}${c.descendants ? ` and ${c.descendants} descendant${c.descendants > 1 ? 's' : ''}` : ''}. Parents, grandparents, siblings and the in-laws' own families are <strong>not</strong> copied. This tree stays exactly as it is.</p>`
         : '<p class="muted">Starts a separate tree with one person. Your other trees stay as they are.</p>';
     const defaultName = imported ? imported.name : src ? first + "'s family" : 'New family tree';
-    treeNewForm.innerHTML = `<h2>${heading}</h2>${blurb}
+    const warnSmall = imported && imported.people <= 1
+      ? '<p class="auth-msg warn" role="alert">This file contains only <strong>1 person</strong>, so it looks like an empty tree. Your family is not in it. Save the file again from the app where your family is shown (signed in to the right account), using Export → Tree file.</p>' : '';
+    treeNewForm.innerHTML = `<h2>${heading}</h2>${blurb}${warnSmall}
       <label>Tree name<input name="name" required maxlength="80" value="${esc(defaultName)}" autocomplete="off"></label>
       ${src || imported ? '' : '<label>First person\'s name<input name="first" maxlength="80" value="Me" autocomplete="off"></label>'}
       ${reuse ? '' : '<label class="chk"><input type="checkbox" name="open" checked> Open the new tree now</label>'}

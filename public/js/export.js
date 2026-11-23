@@ -123,6 +123,7 @@
 
   // The saved file holds the tree, its display settings and its name, so it can be imported anywhere.
   FT.saveJson = function () {
+    if (Object.keys(FT.store.tree.people).length <= 1 && !confirm('This tree has only 1 person, so the file will not contain your family. Are you looking at the right tree or account? Save it anyway?')) return;
     const file = {
       format: 'family-tree-builder', version: 2, exportedAt: new Date().toISOString(),
       name: FT.treeName(), tree: FT.store.tree, settings: FT.store.settings
