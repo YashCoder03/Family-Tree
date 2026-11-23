@@ -1,6 +1,6 @@
 # Deploying to Vercel
 
-The app is a static site (`public/`) plus one serverless function (`api/[...path].js`) that stores
+The app is a static site (`public/`) plus one serverless function (`api/index.js`) that stores
 accounts and trees in **MongoDB**. Everything below uses free tiers.
 
 ## 1. MongoDB Atlas (free)

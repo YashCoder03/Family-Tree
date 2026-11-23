@@ -4,6 +4,9 @@
   "buildCommand": null,
   "installCommand": "npm install --omit=dev",
   "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

@@ -5,7 +5,7 @@
 //
 // Trees, accounts and view-only links are stored in the data folder. Every browser that opens the
 // app talks to this server: changes are saved immediately and pushed to the other open browsers.
-// (On Vercel the same API runs from api/[...path].js with MongoDB instead.)
+// (On Vercel the same API runs from api/index.js with MongoDB instead.)
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
