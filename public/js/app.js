@@ -1108,8 +1108,22 @@
       const tree = imported ? imported.tree : src ? FT.buildSubtree(fromPerson) : FT.blankTree(String(d.get('first') || ''));
       let staged;
       try { staged = FT.stageTree(id, name, tree, imported && imported.settings); } catch (err) { alert('Could not save the new tree in this browser (storage is full or the file is not a valid tree).'); return; }
+      const btn = treeNewForm.querySelector('button.primary');
+      const label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
       let uploaded = true;
-      try { await FT.sync.createTree(id, staged); } catch (err) { uploaded = false; try { localStorage.setItem(FT.dirtyKey(id), '1'); } catch (x) { /* ignore */ } }
+      try { await FT.sync.createTree(id, staged); } catch (err) {
+        if (err.locked || err.status) { // the server answered and said no: do not keep a half-created copy
+          FT.forgetTree(id);
+          btn.disabled = false;
+          btn.textContent = label;
+          alert(err.locked ? 'Sign in first: on this site trees are saved to your account.' : `The server could not save this tree: ${err.message}`);
+          return;
+        }
+        uploaded = false;
+        try { localStorage.setItem(FT.dirtyKey(id), '1'); } catch (x) { /* ignore */ }
+      }
       treeNewDlg.close();
       if (d.get('open')) return FT.switchTo(id);
       await openTrees();
@@ -1125,6 +1139,7 @@
   // pick a saved tree file; it always becomes a new tree
   function pickImport() {
     if (FT.readOnly) return;
+    if (FT.sync.state === 'locked') return openAuth('login', { text: 'Sign in first: on this site your trees are saved to your account. Then import your file.', kind: 'err' });
     const input = $('#loadJsonInput');
     input.value = '';
     input.onchange = async () => {
@@ -1136,7 +1151,12 @@
         if (treesDlg.open) treesDlg.close();
         openNewTree({ imported });
       } catch (err) {
-        alert('That file is not a valid family tree. Use a file saved with "Save tree to file" or Export → Tree file.');
+        const isSheet = /\.(xlsx?|csv)$/i.test(file.name);
+        alert(isSheet
+          ? 'Excel and CSV files cannot be imported (they are for reading only). Use the tree file from Export → Tree file (.json) or "Save tree to file".'
+          : err instanceof SyntaxError || (err && err.message === 'read')
+            ? `"${file.name}" could not be read as a tree file. Pick the .json file saved with Export → Tree file (.json).`
+            : `"${file.name}" is a JSON file, but not a Family Tree Builder tree (it needs a "people" list and a starting person). Pick a file saved with Export → Tree file (.json).`);
       }
     };
     input.click();

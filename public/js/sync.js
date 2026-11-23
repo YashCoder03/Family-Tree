@@ -28,7 +28,8 @@
 
   async function api(path, options) {
     const ctl = new AbortController();
-    const t = setTimeout(() => ctl.abort(), 4000);
+    // a cold serverless start plus a database connection can take a few seconds; writes get longer
+    const t = setTimeout(() => ctl.abort(), options && options.method && options.method !== 'GET' ? 30000 : 12000);
     try {
       const headers = Object.assign({}, options && options.headers, FT.auth ? { Authorization: 'Bearer ' + FT.auth.token } : {});
       const res = await fetch(sync.base + path, Object.assign({ signal: ctl.signal, cache: 'no-store' }, options, { headers }));
